@@ -59,7 +59,21 @@
     datoBruto:      $("datoBruto"),
     consola:        $("consola"),
     listaObjetos:   $("listaObjetos"),
-    contador:       $("contadorObjetos")
+    contador:       $("contadorObjetos"),
+    modalConexion:   $("modalConexion"),
+    btnCerrarModal:  $("btnCerrarModal"),
+    btnTabSerial:    $("btnTabSerial"),
+    btnTabRed:       $("btnTabRed"),
+    tabSerial:       $("tabSerial"),
+    tabRed:          $("tabRed"),
+    btnBuscarPuerto: $("btnBuscarPuerto"),
+    inpPuertoElegido:$("inpPuertoElegido"),
+    listaPuertos:    $("listaPuertos"),
+    txtEstadoSerial: $("txtEstadoSerial"),
+    btnConectarSerial:$("btnConectarSerial"),
+    inpWsUrl:        $("inpWsUrl"),
+    txtEstadoRed:    $("txtEstadoRed"),
+    btnConectarRed:  $("btnConectarRed")
   };
 
   // ---------------- Geometría del lienzo ----------------
@@ -391,44 +405,35 @@
     requestAnimationFrame(bucle);
   }
 
-  // ---------------- Comunicación serie (Web Serial API) ----------------
-  async function conectarSerie() {
+  // ---------------- Comunicación: puerto serie (Web Serial) y red (WebSocket) ----------------
+
+  // Abre un puerto serie ya elegido y arranca el lector
+  async function abrirPuerto(puerto) {
     if (!("serial" in navigator)) {
       log("[ERROR] Tu navegador no soporta Web Serial (usa Chrome/Edge).", "linea-error");
       ui.txtEstado.textContent = "Navegador sin soporte Web Serial";
-      return;
+      return false;
     }
 
     try {
-      const puerto = await navigator.serial.requestPort();
-
-      let puertoAbierto = false;
-      try {
-        await puerto.open({ baudRate: 9600 });
-        puertoAbierto = true;
-      } catch (errorApertura) {
-        log(`[ERROR] No se pudo abrir el puerto: ${errorApertura.message}`, "linea-error");
-        log("[AYUDA] El puerto ya está ocupado. Si usas Termite, abra en escucha el OTRO extremo del par (ej. navegador en COM6 y Termite en COM5).", "linea-error");
-        ui.txtEstado.textContent = "Puerto ocupado: cierra el que lo tenga abierto";
-        return;
-      }
-
-      if (!puertoAbierto) return;
+      ui.txtEstado.textContent = "Abriendo puerto serie...";
+      await puerto.open({ baudRate: 9600 });
 
       estado.puerto = puerto;
+      estado.red = null;
       estado.conectado = true;
 
       ui.txtEstado.textContent = "Arduino conectado (9600 baudios)";
       ui.btnConectar.textContent = "Desconectar";
-      log("[SYS] Puerto serie abierto a 9600 baudios", "linea-nueva");
+      ui.txtEstadoSerial.textContent = "Conectado";
+      ui.punto.classList.remove("rojo");
+      log(`[SYS] Puerto serie abierto (${estado.puertoElegido || "com0com/COM"}) a 9600 baudios`, "linea-nueva");
 
-      // Lector con búfer: las lecturas pueden llegar partidas o sin salto de línea
       const decodificador = new TextDecoder();
       let buffer = "";
-      let ultimaRecepcion = performance.now();
       estado.lector = puerto.readable.getReader();
 
-      // Si el terminal no termina con \n, se vacía el búfer cada 400 ms
+      // Sin salto de línea al final: se vacía el búfer periódicamente
       const soltarBuffer = () => {
         if (!estado.conectado) return;
         if (buffer.trim() !== "") {
@@ -444,10 +449,8 @@
         if (done) break;
 
         buffer += decodificador.decode(value, { stream: true });
-        ultimaRecepcion = performance.now();
-
         const lineas = buffer.split(/\r?\n/);
-        buffer = lineas.pop();                    // lo que quede incompleto se guarda
+        buffer = lineas.pop();
 
         for (const linea of lineas) {
           if (linea.trim() === "") continue;
@@ -463,18 +466,160 @@
       ui.txtEstado.textContent = "Error de conexión";
     } finally {
       try { estado.lector && estado.lector.releaseLock(); } catch (_) {}
-      estado.conectado = false;
-      ui.btnConectar.textContent = "Conectar puerto serie";
+      if (estado.puerto === puerto) {
+        estado.conectado = false;
+        estado.puerto = null;
+        ui.btnConectar.textContent = "Conectar";
+        ui.txtEstadoSerial.textContent = "Desconectado";
+      }
     }
+  }
+
+  // Abre el selector nativo y muestra el puerto elegido en el modal
+  function buscarPuertoSerie() {
+    if (!("serial" in navigator)) {
+      log("[ERROR] Tu navegador no soporta Web Serial (usa Chrome/Edge).", "linea-error");
+      return;
+    }
+    navigator.serial.requestPort()
+      .then((puerto) => {
+        estado.puertoElegido = puerto;
+        ui.inpPuertoElegido.value = "PUERTO ELEGIDO ✓";
+        ui.txtEstadoSerial.textContent = "Listo para conectar";
+        listarPuertosConcedidos();
+      })
+      .catch(() => { /* el usuario canceló el selector */ });
+  }
+
+  // Muestra los puertos que Chrome ya nos dejó usar (acceso directo)
+  function listarPuertosConcedidos() {
+    if (!("serial" in navigator)) return;
+    navigator.serial.getPorts().then((puertos) => {
+      ui.listaPuertos.innerHTML = "";
+      const vacio = document.createElement("li");
+      if (puertos.length === 0) {
+        vacio.innerHTML = `<span>Sin puertos concedidos aún — usa BUSCAR</span>`;
+        ui.listaPuertos.appendChild(vacio);
+        return;
+      }
+      puertos.forEach((puerto) => {
+        const li = document.createElement("li");
+        const info = puerto.getInfo();
+        const nombre = (info.usbVendorId && info.usbProductId)
+          ? `USB ${info.usbVendorId.toString(16)}:${info.usbProductId.toString(16)}`
+          : "com0com / puerto del sistema";
+        li.innerHTML = `<span>${nombre}</span>`;
+        li.addEventListener("click", () => {
+          estado.puertoElegido = puerto;
+          ui.inpPuertoElegido.value = "PUERTO ELEGIDO ✓";
+          ui.txtEstadoSerial.textContent = "Listo para conectar";
+          ui.listaPuertos.querySelectorAll("li").forEach((x) => x.classList.remove("pick"));
+          li.classList.add("pick");
+        });
+        ui.listaPuertos.appendChild(li);
+      });
+    });
+  }
+
+  function conectarSerial() {
+    if (!estado.puertoElegido) {
+      ui.txtEstadoSerial.textContent = "Elige un puerto con BUSCAR primero";
+      log("[ERROR] No hay puerto elegido: usa BUSCAR", "linea-error");
+      return;
+    }
+    cerrarModal();
+    abrirPuerto(estado.puertoElegido);
+  }
+
+  // Conexión por red: radar_bridge.py lee el Arduino y emite por WebSocket
+  function conectarRed() {
+    const url = ui.inpWsUrl.value.trim();
+    if (!url) {
+      log("[ERROR] Escribe la dirección del puente WebSocket (ws://IP:8765)", "linea-error");
+      return;
+    }
+    if (!/^wss?:\/\//i.test(url)) {
+      log("[ERROR] Formato esperado: ws://192.168.1.100:8765", "linea-error");
+      return;
+    }
+    cerrarModal();
+
+    let ws;
+    try {
+      ws = new WebSocket(url);
+    } catch (error) {
+      log(`[ERROR] ${error.message}`, "linea-error");
+      return;
+    }
+
+    estado.red = ws;
+    ui.txtEstadoRed.textContent = "Conectando...";
+    ui.txtEstado.textContent = "Conectando por red...";
+
+    ws.onopen = () => {
+      estado.puerto = null;
+      estado.conectado = true;
+      ui.txtEstado.textContent = `Red conectada (${url})`;
+      ui.txtEstadoRed.textContent = "Conectado";
+      ui.btnConectar.textContent = "Desconectar";
+      ui.punto.classList.remove("rojo");
+      log(`[SYS] Conectado por red: ${url}`, "linea-nueva");
+    };
+
+    ws.onmessage = (evento) => {
+      const linea = String(evento.data).trim();
+      if (!linea) return;
+      if (estado.corriendo) recibirDato(linea, true);
+      else log(`[PAUSA] ${linea}`);
+    };
+
+    ws.onclose = () => {
+      if (estado.red !== ws) return;
+      estado.red = null;
+      estado.conectado = false;
+      ui.txtEstado.textContent = "Red desconectada";
+      ui.txtEstadoRed.textContent = "Desconectado";
+      ui.btnConectar.textContent = "Conectar";
+      log("[SYS] Enlace de red cerrado");
+    };
+
+    ws.onerror = () => {
+      log("[ERROR] No se pudo conectar por red; revisa radar_bridge.py", "linea-error");
+      ui.txtEstadoRed.textContent = "Sin enlace";
+    };
   }
 
   async function desconectarSerie() {
     estado.conectado = false;
-    try { estado.lector && await estado.lector.cancel(); } catch (_) {}
-    try { estado.puerto && await estado.puerto.close(); } catch (_) {}
-    ui.txtEstado.textContent = "Puerto desconectado";
-    ui.btnConectar.textContent = "Conectar puerto serie";
-    log("[SYS] Puerto serie cerrado");
+
+    if (estado.red) {
+      const ws = estado.red;
+      estado.red = null;
+      try { ws.close(); } catch (_) {}
+      ui.txtEstado.textContent = "Red desconectada";
+      ui.txtEstadoRed.textContent = "Desconectado";
+      log("[SYS] Enlace de red cerrado");
+    } else {
+      try { estado.lector && await estado.lector.cancel(); } catch (_) {}
+      try { estado.puerto && await estado.puerto.close(); } catch (_) {}
+      estado.puerto = null;
+      ui.txtEstado.textContent = "Puerto desconectado";
+      log("[SYS] Puerto serie cerrado");
+    }
+
+    ui.btnConectar.textContent = "Conectar";
+  }
+
+  // ---------------- Modal de conexión ----------------
+  function abrirModal() {
+    if (!ui.modalConexion.classList.contains("oculto")) return;
+    ui.modalConexion.classList.remove("oculto");
+    ui.inpWsUrl.value = `ws://${window.location.hostname || "192.168.1.100"}:8765`;
+    listarPuertosConcedidos();
+  }
+
+  function cerrarModal() {
+    ui.modalConexion.classList.add("oculto");
   }
 
   // ---------------- Panel de objetos simulados ----------------
@@ -700,8 +845,32 @@
   ui.btnSimulacion.addEventListener("click", () => seleccionarModo("sim"));
   ui.btnSerial.addEventListener("click", () => seleccionarModo("serial"));
   ui.btnConectar.addEventListener("click", () => {
-    estado.conectado ? desconectarSerie() : conectarSerie();
+    if (estado.conectado) { desconectarSerie(); return; }
+    abrirModal();
   });
+
+  ui.btnCerrarModal.addEventListener("click", cerrarModal);
+  ui.modalConexion.addEventListener("click", (evento) => {
+    if (evento.target === ui.modalConexion) cerrarModal();
+  });
+
+  ui.btnTabSerial.addEventListener("click", () => {
+    ui.btnTabSerial.classList.add("activo");
+    ui.btnTabRed.classList.remove("activo");
+    ui.tabSerial.classList.remove("oculto");
+    ui.tabRed.classList.add("oculto");
+  });
+
+  ui.btnTabRed.addEventListener("click", () => {
+    ui.btnTabRed.classList.add("activo");
+    ui.btnTabSerial.classList.remove("activo");
+    ui.tabRed.classList.remove("oculto");
+    ui.tabSerial.classList.add("oculto");
+  });
+
+  ui.btnBuscarPuerto.addEventListener("click", buscarPuertoSerie);
+  ui.btnConectarSerial.addEventListener("click", conectarSerial);
+  ui.btnConectarRed.addEventListener("click", conectarRed);
 
   ui.btnIniciar.addEventListener("click", () => {
     estado.corriendo = !estado.corriendo;
