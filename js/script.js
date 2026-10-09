@@ -73,7 +73,9 @@
     btnConectarSerial:$("btnConectarSerial"),
     inpWsUrl:        $("inpWsUrl"),
     txtEstadoRed:    $("txtEstadoRed"),
-    btnConectarRed:  $("btnConectarRed")
+    btnConectarRed:  $("btnConectarRed"),
+    listaLogros:     $("listaLogros"),
+    contadorLogros:  $("contadorLogros")
   };
 
   // ---------------- Geometría del lienzo ----------------
@@ -153,6 +155,7 @@
     if (hayObjeto) {
       estado.ecos.push({ angulo: dato.angulo, distancia: dato.distancia, t: performance.now() });
       radio.lock();                       // confirmación de contacto por radio
+      desbloquearLogro("operador");
     }
 
     // Sincronización: en modo serie la línea de barrido sigue al servomotor real
@@ -427,6 +430,7 @@
       ui.btnConectar.textContent = "Desconectar";
       ui.txtEstadoSerial.textContent = "Conectado";
       ui.punto.classList.remove("rojo");
+      desbloquearLogro("enlace");
       log(`[SYS] Puerto serie abierto (${estado.puertoElegido || "com0com/COM"}) a 9600 baudios`, "linea-nueva");
 
       const decodificador = new TextDecoder();
@@ -563,6 +567,7 @@
       ui.txtEstadoRed.textContent = "Conectado";
       ui.btnConectar.textContent = "Desconectar";
       ui.punto.classList.remove("rojo");
+      desbloquearLogro("enlace");
       log(`[SYS] Conectado por red: ${url}`, "linea-nueva");
     };
 
@@ -878,8 +883,12 @@
     ui.btnIniciar.classList.toggle("pausa", !estado.corriendo);
     log(estado.corriendo ? "[SYS] barrido reanudado" : "[SYS] barrido detenido");
 
-    if (estado.corriendo) reproducirSonido();
-    else pausarSonido();
+    if (estado.corriendo) {
+      reproducirSonido();
+      desbloquearLogro("recluta");
+    } else {
+      pausarSonido();
+    }
   });
 
   ui.btnSonido.addEventListener("click", () => {
@@ -910,6 +919,7 @@
 
     if (estado.alerta) {
       reproducirAlerta();      // suena la sirena y silencia radar/radio
+      desbloquearLogro("alerta");
       log("[SYS] sirena de alerta activada", "linea-error");
     } else {
       pausarSonido();
@@ -987,10 +997,100 @@
     }
   });
 
+  // ---------------- Logros (gamificación) ----------------
+  const LOGROS = [
+    { id: "recluta",     img: "img/s1.avif", nombre: "RECLUTA",          desc: "Iniciar el barrido por primera vez" },
+    { id: "enlace",      img: "img/s2.avif", nombre: "OPERADOR DE ENLACE", desc: "Conectar por puerto serie o red" },
+    { id: "operador",    img: "img/s3.webp", nombre: "OPERADOR RADAR",     desc: "Adquirir el primer contacto" },
+    { id: "alerta",      img: "img/s4.webp", nombre: "ALERTA ROJA",        desc: "Activar la alerta de emergencia" },
+    { id: "comandante",  img: "img/s5.webp", nombre: "COMANDANTE",         desc: "Completar los cinco méritos" }
+  ];
+
+  function cargarLogros() {
+    try {
+      const guardado = JSON.parse(localStorage.getItem("nox_logros") || "[]");
+      if (Array.isArray(guardado)) return new Set(guardado.filter((x) => typeof x === "string"));
+    } catch (_) { /* sin acceso a localStorage: logros solo en sesión */ }
+    return new Set();
+  }
+
+  let logrosConseguidos = cargarLogros();
+
+  function guardarLogros() {
+    try { localStorage.setItem("nox_logros", JSON.stringify([...logrosConseguidos])); } catch (_) {}
+  }
+
+  function pintarLogros() {
+    ui.listaLogros.innerHTML = "";
+    let n = 0;
+    for (const L of LOGROS) {
+      const abierto = logrosConseguidos.has(L.id);
+      if (abierto) n++;
+      const li = document.createElement("li");
+      li.className = `logro ${abierto ? "conseguido" : "bloqueado"}`;
+      li.innerHTML = `<img src="${L.img}" alt="" loading="lazy">
+        <div><p class="logro-nombre">${abierto ? "★ " : "· "}${L.nombre}</p>
+        <p class="logro-desc">${L.desc}</p></div>
+        <span class="conteo">${abierto ? "OK" : "??"}</span>`;
+      ui.listaLogros.appendChild(li);
+    }
+    ui.contadorLogros.textContent = `${n}/${LOGROS.length}`;
+  }
+
+  function sonarLogro() {
+    const ctx = radio.ctx && radio.ctx.state === "running" ? radio.ctx : null;
+    if (!ctx) return;
+    const t0 = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = "square";
+    osc.frequency.setValueAtTime(880, t0);
+    osc.frequency.setValueAtTime(1320, t0 + 0.12);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(0.06, t0 + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.45);
+    osc.connect(g);
+    g.connect(ctx.destination);
+    osc.start(t0);
+    osc.stop(t0 + 0.5);
+  }
+
+  function desbloquearLogro(id) {
+    if (logrosConseguidos.has(id)) return;
+    const L = LOGROS.find((x) => x.id === id);
+    if (!L) return;
+
+    logrosConseguidos.add(id);
+    guardarLogros();
+    pintarLogros();
+    log(`[LOGRO] ${L.nombre} desbloqueado`, "linea-nueva");
+
+    if (document && document.body) {
+      const toast = document.createElement("div");
+      toast.className = "mensaje-logro";
+      toast.innerHTML = `<img src="${L.img}" alt="">
+        <div><p class="ml-tit">★ LOGRO DESBLOQUEADO · ${logrosConseguidos.size}/${LOGROS.length}</p>
+        <p class="ml-nombre">${L.nombre}</p>
+        <p class="ml-desc">${L.desc}</p></div>`;
+      document.body.appendChild(toast);
+      requestAnimationFrame(() => toast.classList.add("mostrar"));
+      setTimeout(() => {
+        toast.classList.remove("mostrar");
+        setTimeout(() => toast.remove(), 500);
+      }, 4500);
+    }
+    sonarLogro();
+
+    if (id !== "comandante" && LOGROS.slice(0, -1).every((x) => logrosConseguidos.has(x.id))) {
+      desbloquearLogro("comandante");
+    }
+  }
+
   // ---------------- Arranque ----------------
   window.addEventListener("resize", redimensionar);
   redimensionar();
   pintarObjetos();
+  pintarLogros();
 
   // Activación automática del audio al cargar (sin tocar la pantalla).
   // Chrome suele permitirlo por autoplay si el sitio tiene historial de uso;
