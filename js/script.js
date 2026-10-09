@@ -507,7 +507,10 @@
     alerta: new Audio("sound/alerta.mp3"),
     actual: null,
     avisado: false,
-    sinRadio: false
+    sinRadio: false,
+    reproduciendo: false,   // verdadero cuando el audio está sonando de verdad
+    pendienteGesto: false,  // autoplay bloqueado: espera una interacción
+    avisadoBlock: false
   };
 
   for (const pista of [sonido.radar, sonido.radio, sonido.alerta]) {
@@ -597,12 +600,33 @@
     try {
       intento = pista.play();
     } catch (error) {
-      fallarSonido(pista, error.message || "excepción");
+      manejarFalloReproduccion(pista, error);
       return;
     }
     if (intento && typeof intento.catch === "function") {
-      intento.catch((error) => fallarSonido(pista, (error && error.name) || "rechazo"));
+      intento
+        .then(() => { sonido.reproduciendo = true; })
+        .catch((error) => manejarFalloReproduccion(pista, error));
+    } else {
+      sonido.reproduciendo = true;
     }
+  }
+
+  // Un rechazo por NotAllowedError es autoplay bloqueado (falta gesto), NO un
+  // archivo roto: se reintenta en autoplay sin pasar a la cadena de respaldo.
+  function manejarFalloReproduccion(pista, error) {
+    const nombre = (error && error.name) || "rechazo";
+    if (nombre === "NotAllowedError") {
+      sonido.reproduciendo = false;
+      sonido.pendienteGesto = true;
+      if (!sonido.avisadoBlock) {
+        sonido.avisadoBlock = true;
+        log("[SYS] el navegador bloqueó el audio automático; sonará en la primera interacción", "linea-error");
+      }
+      return;
+    }
+    sonido.reproduciendo = false;
+    fallarSonido(pista, nombre);
   }
 
   function fallarSonido(pista, motivo) {
@@ -617,7 +641,7 @@
 
     // Tampoco funcionó alerta.mp3 -> se corta el sonido y se avisa
     sonido.actual = null;
-    for (const pista2 of [sonido.radar, sonido.alerta]) {
+    for (const pista2 of [sonido.radar, sonido.radio, sonido.alerta]) {
       try { pista2.pause(); pista2.currentTime = 0; } catch (_) {}
     }
     if (!sonido.avisado) {
@@ -650,6 +674,7 @@
   }
 
   function pausarSonido() {
+    sonido.reproduciendo = false;
     for (const pista of [sonido.radar, sonido.radio, sonido.alerta]) {
       try { pista.pause(); } catch (_) {}
     }
@@ -798,7 +823,29 @@
   redimensionar();
   pintarObjetos();
 
-  // El navegador exige un gesto del usuario antes de reproducir audio
+  // Activación automática del audio al cargar (sin tocar la pantalla).
+  // Chrome suele permitirlo por autoplay si el sitio tiene historial de uso;
+  // si lo bloquea, se reintenta unos segundos y luego el gesto sirve de respaldo.
+  function iniciarAudioAutomatico() {
+    if (!estado.sonido || !estado.corriendo) return;
+    reproducirSonido();
+  }
+
+  iniciarAudioAutomatico();
+
+  if (typeof setInterval === "function") {
+    const reintentosAudio = setInterval(() => {
+      if (!estado.sonido || !estado.corriendo) return;
+      if (estado.alerta) { if (!sonido.actual) reproducirAlerta(); return; }
+      if (sonido.actual && sonido.reproduciendo) { clearInterval(reintentosAudio); return; }
+      if (sonido.pendienteGesto) return;   // ya se avisó: espera al gesto
+      reproducirSonido();
+    }, 600);
+    setTimeout(() => clearInterval(reintentosAudio), 6000);
+  }
+
+  // Último recurso: si el navegador bloqueó el autoplay, cualquier
+  // interacción (clic, tecla) desbloquea el audio automáticamente.
   const primerGesto = () => {
     reproducirSonido();
     document.removeEventListener("pointerdown", primerGesto);
