@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>0NOXRADIOR | Radar de Vigilancia Táctica</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="scan"></div>
+
+  <!-- ================= BARRA DE MANDO ================= -->
+  <header class="barra-sup">
+    <div class="marca">
+      <span class="marca-sig">◎</span>
+      <span class="marca-txt">0NOXRADIOR</span>
+      <span class="marca-clave">SYS-0X · ELT-622</span>
+    </div>
+
+    <div class="seguridad">
+      <span class="sello"><i class="led led-verde parpadeo"></i>ENLACE SEGURO</span>
+      <span class="sello"><i class="led led-ambar"></i>AES-256</span>
+      <span class="sello"><i class="led led-rojo"></i>GRABANDO</span>
+    </div>
+
+    <div class="tiempo">
+      <span class="tiempo-rotulo">HORA DE MISIÓN</span>
+      <span class="tiempo-hora" id="horaMision">--:--:--</span>
+      <span class="tiempo-fecha" id="fechaMision">----/--/--</span>
+    </div>
+  </header>
+
+  <div class="ticker-cinta">
+    <span class="ticker-izq">◄ ESTADO DEL SISTEMA</span>
+    <div class="ticker">
+      <span>ENLACE CIFRADO &middot; TELEMETRÍA 9600 BAUD &middot; SENSOR HC-SR04 &middot; SERVO 0-180° &middot; SECTOR 07 ACTIVO &middot; DEFENSA C VOLADORA &middot;</span>
+    </div>
+  </div>
+
+  <main class="contenedor">
+
+    <!-- ================= CONSOLA LATERAL ================= -->
+    <aside class="panel">
+
+      <section class="mod">
+        <header class="mod-tit"><b>MOD-01</b>FUENTE DE DATOS<i class="led led-verde"></i></header>
+
+        <div class="grupo-botones" id="grupoModo">
+          <button id="btnSimulacion" class="boton activo">SIMULACIÓN</button>
+          <button id="btnSerial" class="boton">SERIAL</button>
+        </div>
+
+        <button id="btnConectar" class="boton ancho oculto">VINCULAR PUERTO SERIE</button>
+
+        <div class="estado" id="estadoConexion">
+          <span class="punto"></span><span id="txtEstado">MODO SIMULACIÓN ACTIVO</span>
+        </div>
+
+        <div class="grupo-botones">
+          <button id="btnIniciar" class="boton primario">▶ INICIAR BARRIDO</button>
+          <button id="btnLimpiar" class="boton">LIMPIAR Ecos</button>
+        </div>
+
+        <button id="btnSonido" class="boton ancho activo">SONIDO: ON</button>
+
+        <button id="btnAlerta" class="boton ancho boton-alarma">⚠ ALERTA ROJA: OFF</button>
+      </section>
+
+      <section class="mod">
+        <header class="mod-tit"><b>MOD-02</b>OBJETIVOS EN SECTOR<i class="conteo" id="contadorObjetos">0</i></header>
+
+        <ul class="lista-objetos" id="listaObjetos"></ul>
+
+        <div class="alta-objeto">
+          <input type="text" id="inpObjeto" placeholder="AZIMUTH,ALCANCE · EJ. 90,120" autocomplete="off" spellcheck="false">
+          <button id="btnAgregar" class="boton">+ AÑADIR</button>
+        </div>
+        <p class="msj-error" id="msjError" hidden></p>
+        <p class="ayuda">FORMATO <code>ángulo,distancia</code> — el barrido detecta el objetivo al cruzar su azimuth.</p>
+      </section>
+
+      <section class="mod">
+        <header class="mod-tit"><b>MOD-03</b>ÚLTIMO CONTACTO<i class="led led-ambar"></i></header>
+
+        <div class="dato-bruto" id="datoBruto">-- , --</div>
+        <dl class="lecturas">
+          <div><dt>AZIMUTH</dt><dd id="txtAngulo">0°</dd></div>
+          <div><dt>ALCANCE</dt><dd id="txtDistancia">-- cm</dd></div>
+          <div><dt>ESTADO</dt><dd id="txtObjetivo">SIN CONTACTO</dd></div>
+        </dl>
+      </section>
+
+    </aside>
+
+    <!-- ================= PANTALLA DEL RADAR ================= -->
+    <div class="derecha">
+
+      <section class="escenario">
+        <canvas id="radar" width="900" height="560"></canvas>
+
+        <div class="esq esq-a"></div>
+        <div class="esq esq-b"></div>
+        <div class="esq esq-c"></div>
+        <div class="esq esq-d"></div>
+
+        <div class="marcador-leyenda">
+          <span><i class="eco"></i>Contacto</span>
+          <span><i class="barrido"></i>Barrido</span>
+        </div>
+
+        <span class="etiqueta-op">NVA. VILLAHERMOSA · ZONA 7</span>
+      </section>
+
+      <section class="mod">
+        <header class="mod-tit"><b>MOD-04</b>MONITOR DE TELEMETRÍA<i class="led led-verde"></i></header>
+        <div class="consola" id="consola"></div>
+      </section>
+
+    </div>
+
+  </main>
+
+  <footer class="pie">
+    <span>0NOXRADIOR · SISTEMA DE BARRIDO ULTRASÓNICO — FORMATO <code>ángulo,distancia</code></span>
+    <span class="pie-der">FASE 2 · HTML5 / CSS / JS</span>
+  </footer>
+
+  <script src="js/script.js"></script>
+</body>
+</html>
