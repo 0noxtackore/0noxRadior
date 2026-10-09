@@ -73,7 +73,8 @@
     btnConectarSerial:$("btnConectarSerial"),
     inpWsUrl:        $("inpWsUrl"),
     txtEstadoRed:    $("txtEstadoRed"),
-    btnConectarRed:  $("btnConectarRed")
+    btnConectarRed:  $("btnConectarRed"),
+    btnSerialSimulado:$("btnSerialSimulado")
   };
 
   // ---------------- Geometría del lienzo ----------------
@@ -419,6 +420,7 @@
     }
 
     try {
+      detenerConexionActiva();
       ui.txtEstado.textContent = "Abriendo puerto serie...";
       await puerto.open({ baudRate: 9600 });
 
@@ -528,11 +530,65 @@
   function conectarSerial() {
     if (!estado.puertoElegido) {
       ui.txtEstadoSerial.textContent = "Elige un puerto con BUSCAR primero";
-      log("[ERROR] No hay puerto elegido: usa BUSCAR", "linea-error");
+      log("[ERROR] No hay puerto elegido: usa BUSCAR o el SERIAL SIMULADO", "linea-error");
       return;
     }
     cerrarModal();
     abrirPuerto(estado.puertoElegido);
+  }
+
+  // Serial de simulacro: se comporta como un Arduino emitiendo por serie,
+  // para máquinas sin puerto real. Mismo formato y misma sincronización.
+  function iniciarSerialSimulado() {
+    if (estado.serialSimulado) return;
+    detenerConexionActiva();
+
+    estado.modo = "serial";
+    estado.serialSimulado = true;
+    estado.conectado = true;
+    estado.puerto = null;
+    estado.red = null;
+
+    ui.btnSimulacion.classList.remove("activo");
+    ui.btnSerial.classList.add("activo");
+    ui.btnConectar.classList.toggle("oculto", false);
+    ui.btnConectar.textContent = "Desconectar";
+    ui.txtEstado.textContent = "SERIAL SIMULADO conectado (eco 0-180°)";
+    ui.txtEstadoSerial.textContent = "Conectado (simulado)";
+    ui.punto.classList.remove("rojo");
+    cerrarModal();
+    log("[SYS] serial de simulacro activo: emite ángulo,distancia como un Arduino", "linea-nueva");
+    desbloquearLogro("enlace");
+
+    let ang = 0;
+    let dir = 1;
+    estado.serialSimTimer = setInterval(() => {
+      if (!estado.serialSimulado) return;
+      const dist = simularLectura(ang);
+      recibirDato(`${ang},${dist}`, true);
+      ang += dir * 2;
+      if (ang >= 180) { ang = 180; dir = -1; }
+      if (ang <= 0)   { ang = 0;   dir = 1; }
+    }, 30);
+  }
+
+  // Cierra lo que esté activo: puerto serie real, red WebSocket o serial simulado
+  function detenerConexionActiva() {
+    if (estado.serialSimulado) {
+      clearInterval(estado.serialSimTimer);
+      estado.serialSimulado = false;
+    }
+    if (estado.red) {
+      const ws = estado.red;
+      estado.red = null;
+      try { ws.close(); } catch (_) {}
+    }
+    if (estado.puerto) {
+      try { estado.lector && estado.lector.cancel(); } catch (_) {}
+      try { estado.puerto.close(); } catch (_) {}
+      estado.puerto = null;
+      estado.lector = null;
+    }
   }
 
   // Conexión por red: radar_bridge.py lee el Arduino y emite por WebSocket
@@ -546,6 +602,7 @@
       log("[ERROR] Formato esperado: ws://192.168.1.100:8765", "linea-error");
       return;
     }
+    detenerConexionActiva();
     cerrarModal();
 
     let ws;
@@ -597,7 +654,13 @@
   async function desconectarSerie() {
     estado.conectado = false;
 
-    if (estado.red) {
+    if (estado.serialSimulado) {
+      clearInterval(estado.serialSimTimer);
+      estado.serialSimulado = false;
+      ui.txtEstado.textContent = "Serial simulado desconectado";
+      ui.txtEstadoSerial.textContent = "Desconectado";
+      log("[SYS] Serial de simulacro detenido");
+    } else if (estado.red) {
       const ws = estado.red;
       estado.red = null;
       try { ws.close(); } catch (_) {}
@@ -835,6 +898,8 @@
     estado.modo = modo;
     const esSim = modo === "sim";
 
+    if (esSim && estado.serialSimulado) detenerConexionActiva();
+
     ui.btnSimulacion.classList.toggle("activo", esSim);
     ui.btnSerial.classList.toggle("activo", !esSim);
     ui.btnConectar.classList.toggle("oculto", esSim);
@@ -875,6 +940,7 @@
 
   ui.btnBuscarPuerto.addEventListener("click", buscarPuertoSerie);
   ui.btnConectarSerial.addEventListener("click", conectarSerial);
+  ui.btnSerialSimulado.addEventListener("click", iniciarSerialSimulado);
   ui.btnConectarRed.addEventListener("click", conectarRed);
 
   ui.btnIniciar.addEventListener("click", () => {

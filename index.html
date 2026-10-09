@@ -154,6 +154,11 @@
 
         <div class="estado"><span class="punto"></span><span id="txtEstadoSerial">Desconectado</span></div>
         <button id="btnConectarSerial" class="boton ancho primario">CONECTAR SERIE</button>
+
+        <p class="ayuda">¿No tienes puerto serie real (Arduino/COM)? La página detecta que no
+          hay fuente y te deja usar el <b>serial de simulacro</b>: se comporta igual que un Arduino
+          (eco 0-180°, 9600 baudios) y media en <code>[RX]</code> con el LINK sincronizado.</p>
+        <button id="btnSerialSimulado" class="boton ancho">⚙ SERIAL SIMULADO — SIN PUERTO REAL</button>
       </section>
 
       <!-- Pestaña: red / websocket -->
