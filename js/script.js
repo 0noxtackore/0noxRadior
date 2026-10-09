@@ -427,6 +427,7 @@
       estado.puerto = puerto;
       estado.red = null;
       estado.conectado = true;
+      cerrarModal();
 
       ui.txtEstado.textContent = "Arduino conectado (9600 baudios)";
       ui.btnConectar.textContent = "Desconectar";
@@ -469,7 +470,9 @@
       soltarBuffer();
     } catch (error) {
       log(`[ERROR] ${error.message}`, "linea-error");
-      ui.txtEstado.textContent = "Error de conexión";
+      log("[AYUDA] No se pudo abrir el puerto: si no es tu Arduino USB (p. ej. es Bluetooth ocupado), usa ⚙ SERIAL SIMULADO — se comporta igual que un Arduino.", "linea-error");
+      ui.txtEstado.textContent = "No se pudo abrir el puerto";
+      ui.txtEstadoSerial.textContent = "FALLO AL ABRIR — usa ⚙ SERIAL SIMULADO";
     } finally {
       try { estado.lector && estado.lector.releaseLock(); } catch (_) {}
       if (estado.puerto === puerto) {
@@ -533,7 +536,8 @@
       log("[ERROR] No hay puerto elegido: usa BUSCAR o el SERIAL SIMULADO", "linea-error");
       return;
     }
-    cerrarModal();
+    // El modal se cierra solo si el puerto se abrió bien; si falla, queda abierto
+    // para poder elegir el SERIAL SIMULADO sin perder contexto.
     abrirPuerto(estado.puertoElegido);
   }
 
