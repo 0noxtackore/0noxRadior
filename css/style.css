@@ -595,8 +595,8 @@ input.invalido { border-color: var(--rojo) !important; box-shadow: 0 0 10px rgba
 /* Aviso flotante de logro desbloqueado */
 .mensaje-logro {
   position: fixed;
-  left: 50%;
-  bottom: 22px;
+  top: 12px;
+  right: 12px;
   z-index: 130;
   width: min(380px, 92vw);
   display: flex;
@@ -607,11 +607,11 @@ input.invalido { border-color: var(--rojo) !important; box-shadow: 0 0 10px rgba
   border: 1px solid var(--verde2);
   box-shadow: 0 0 26px rgba(61, 255, 132, .35), inset 0 0 14px rgba(0, 0, 0, .5);
   clip-path: var(--recorte);
-  transform: translate(-50%, 160%);
+  transform: translateY(-170%);
   transition: transform .4s cubic-bezier(.2, 1.4, .4, 1);
 }
 
-.mensaje-logro.mostrar { transform: translate(-50%, 0); }
+.mensaje-logro.mostrar { transform: translateY(0); }
 
 .mensaje-logro img {
   width: 54px;
