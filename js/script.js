@@ -153,8 +153,10 @@
     if (hayObjeto) {
       estado.ecos.push({ angulo: dato.angulo, distancia: dato.distancia, t: performance.now() });
       radio.lock();                       // confirmación de contacto por radio
-      desbloquearLogro("operador");
     }
+    // Mérito solo en el flanco: al pasar de no-contacto a contacto
+    if (hayObjeto && !estado.ultimoObjeto) desbloquearLogro("operador");
+    estado.ultimoObjeto = hayObjeto;
 
     // Sincronización: en modo serie la línea de barrido sigue al servomotor real
     if (desdeSerial) {
@@ -1017,6 +1019,9 @@
 
   let meritos = [];
   let meritosUsados = new Set(cargarMeritosUsados());
+  let sesionActiva = false;            // los méritos empiezan tras el primer gesto
+  let ultimoMerito = 0;                // cooldown para evitar notificaciones seguidas
+  const MERITO_COOLDOWN_MS = 15000;    // como máximo un mérito cada 15 s
 
   function cargarMeritosUsados() {
     try {
@@ -1075,26 +1080,31 @@
   }
 
   // Cada acción del usuario otorga un mérito al azar con un soldado aleatorio.
+  // Solo tras la primera interacción y respetando el cooldown.
   function desbloquearLogro(tipo) {
+    if (!sesionActiva) return;
+    const ahora = performance.now();
+    if (ahora - ultimoMerito < MERITO_COOLDOWN_MS) return;
+    if (!document || !document.body) return;
+    ultimoMerito = ahora;
+
     const m = proximoMerito();
     const img = IMG_SOLDADOS[Math.floor(Math.random() * IMG_SOLDADOS.length)];
     const etiqueta = ETIQUETAS_TRIGGER[tipo] || "MISIVA DE CAMPO";
     log(`[MÉRITO] ${m.n} (${tipo})`, "linea-nueva");
 
-    if (document && document.body) {
-      const toast = document.createElement("div");
-      toast.className = "mensaje-logro";
-      toast.innerHTML = `<img src="${img}" alt="">
-        <div><p class="ml-tit">★ MÉRITO CONCEDIDO · ${etiqueta}</p>
-        <p class="ml-nombre">${m.n}</p>
-        <p class="ml-desc">${m.d}</p></div>`;
-      document.body.appendChild(toast);
-      requestAnimationFrame(() => toast.classList.add("mostrar"));
-      setTimeout(() => {
-        toast.classList.remove("mostrar");
-        setTimeout(() => toast.remove(), 500);
-      }, 4500);
-    }
+    const toast = document.createElement("div");
+    toast.className = "mensaje-logro";
+    toast.innerHTML = `<img src="${img}" alt="">
+      <div><p class="ml-tit">★ MÉRITO CONCEDIDO · ${etiqueta}</p>
+      <p class="ml-nombre">${m.n}</p>
+      <p class="ml-desc">${m.d}</p></div>`;
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add("mostrar"));
+    setTimeout(() => {
+      toast.classList.remove("mostrar");
+      setTimeout(() => toast.remove(), 500);
+    }, 4500);
     sonarMerito();
   }
 
@@ -1129,6 +1139,7 @@
   // Último recurso: si el navegador bloqueó el autoplay, cualquier
   // interacción (clic, tecla) desbloquea el audio automáticamente.
   const primerGesto = () => {
+    sesionActiva = true;
     reproducirSonido();
     document.removeEventListener("pointerdown", primerGesto);
     document.removeEventListener("keydown", primerGesto);
