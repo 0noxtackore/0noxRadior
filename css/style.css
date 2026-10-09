@@ -283,7 +283,7 @@ body {
 
 .boton:disabled { opacity: .4; cursor: not-allowed; }
 
-.oculto { display: none; }
+.oculto { display: none !important; }
 
 /* ---------------- Estado ---------------- */
 .estado {
