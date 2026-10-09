@@ -73,9 +73,7 @@
     btnConectarSerial:$("btnConectarSerial"),
     inpWsUrl:        $("inpWsUrl"),
     txtEstadoRed:    $("txtEstadoRed"),
-    btnConectarRed:  $("btnConectarRed"),
-    listaLogros:     $("listaLogros"),
-    contadorLogros:  $("contadorLogros")
+    btnConectarRed:  $("btnConectarRed")
   };
 
   // ---------------- Geometría del lienzo ----------------
@@ -902,6 +900,7 @@
   });
 
   ui.btnLimpiar.addEventListener("click", () => {
+    desbloquearLogro("limpieza");
     estado.ecos = [];
     ui.consola.innerHTML = "";
     ui.datoBruto.textContent = "-- , --";
@@ -979,6 +978,7 @@
     ui.inpObjeto.value = "";
     limpiarErrorObj();
     log(`[SIM] objeto agregado (${resultado.angulo},${resultado.distancia})`, "linea-nueva");
+    desbloquearLogro("tecnico");
   }
 
   ui.btnAgregar.addEventListener("click", agregarObjeto);
@@ -997,47 +997,66 @@
     }
   });
 
-  // ---------------- Logros (gamificación) ----------------
-  const LOGROS = [
-    { id: "recluta",     img: "img/s1.avif", nombre: "RECLUTA",          desc: "Iniciar el barrido por primera vez" },
-    { id: "enlace",      img: "img/s2.avif", nombre: "OPERADOR DE ENLACE", desc: "Conectar por puerto serie o red" },
-    { id: "operador",    img: "img/s3.webp", nombre: "OPERADOR RADAR",     desc: "Adquirir el primer contacto" },
-    { id: "alerta",      img: "img/s4.webp", nombre: "ALERTA ROJA",        desc: "Activar la alerta de emergencia" },
-    { id: "comandante",  img: "img/s5.webp", nombre: "COMANDANTE",         desc: "Completar los cinco méritos" }
+  // ---------------- Méritos (notificaciones infinitas) ----------------
+  // La lista larga de méritos vive en js/logros.json (solo para notificaciones,
+  // no se muestra en ninguna interfaz). Los soldados se eligen al azar.
+  const IMG_SOLDADOS = ["img/s1.avif", "img/s2.avif", "img/s3.webp", "img/s4.webp", "img/s5.webp"];
+  const MERITOS_FALLBACK = [
+    { n: "RECLUTA", d: "Primer paso en la estación de vigilancia" },
+    { n: "OPERADOR RADAR", d: "Contacto adquirido en el sector" },
+    { n: "VIGÍA", d: "Turno de guardia iniciado" }
   ];
+  const ETIQUETAS_TRIGGER = {
+    recluta:   "ACCIONES DE BARRIDO",
+    enlace:    "ENLACE ESTABLECIDO",
+    operador:  "CONTACTO ADQUIRIDO",
+    alerta:    "ALERTA ACTIVA",
+    tecnico:   "ALTA DE OBJETIVO",
+    limpieza:  "SECTOR LIMPIO"
+  };
 
-  function cargarLogros() {
+  let meritos = [];
+  let meritosUsados = new Set(cargarMeritosUsados());
+
+  function cargarMeritosUsados() {
     try {
-      const guardado = JSON.parse(localStorage.getItem("nox_logros") || "[]");
-      if (Array.isArray(guardado)) return new Set(guardado.filter((x) => typeof x === "string"));
-    } catch (_) { /* sin acceso a localStorage: logros solo en sesión */ }
-    return new Set();
+      const guardado = JSON.parse(localStorage.getItem("nox_meritos") || "[]");
+      if (Array.isArray(guardado)) return guardado.filter((x) => typeof x === "string");
+    } catch (_) { /* sin localStorage: ciclo solo en sesión */ }
+    return [];
   }
 
-  let logrosConseguidos = cargarLogros();
-
-  function guardarLogros() {
-    try { localStorage.setItem("nox_logros", JSON.stringify([...logrosConseguidos])); } catch (_) {}
+  function guardarMeritosUsados() {
+    try { localStorage.setItem("nox_meritos", JSON.stringify([...meritosUsados])); } catch (_) {}
   }
 
-  function pintarLogros() {
-    ui.listaLogros.innerHTML = "";
-    let n = 0;
-    for (const L of LOGROS) {
-      const abierto = logrosConseguidos.has(L.id);
-      if (abierto) n++;
-      const li = document.createElement("li");
-      li.className = `logro ${abierto ? "conseguido" : "bloqueado"}`;
-      li.innerHTML = `<img src="${L.img}" alt="" loading="lazy">
-        <div><p class="logro-nombre">${abierto ? "★ " : "· "}${L.nombre}</p>
-        <p class="logro-desc">${L.desc}</p></div>
-        <span class="conteo">${abierto ? "OK" : "??"}</span>`;
-      ui.listaLogros.appendChild(li);
-    }
-    ui.contadorLogros.textContent = `${n}/${LOGROS.length}`;
+  // Carga la lista grande desde js/logros.json; si falla, usa la corta.
+  function cargarMeritos() {
+    if (typeof fetch !== "function") { meritos = [...MERITOS_FALLBACK]; return; }
+    fetch("js/logros.json")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((datos) => {
+        if (datos && Array.isArray(datos.meritos) && datos.meritos.length) {
+          meritos = datos.meritos;
+        } else if (meritos.length === 0) {
+          meritos = [...MERITOS_FALLBACK];
+        }
+      })
+      .catch(() => { if (meritos.length === 0) meritos = [...MERITOS_FALLBACK]; });
   }
 
-  function sonarLogro() {
+  // Siguiente mérito sin repetir; al agotar la lista vuelve a rotar (infinito).
+  function proximoMerito() {
+    if (meritos.length === 0) return { n: "MÉRITO EN CAMPO", d: "Servicio distinguido en el sector" };
+    const disponibles = meritos.filter((m) => !meritosUsados.has(m.n));
+    const pool = disponibles.length ? disponibles : meritos;
+    const elegido = pool[Math.floor(Math.random() * pool.length)];
+    meritosUsados.add(elegido.n);
+    guardarMeritosUsados();
+    return elegido;
+  }
+
+  function sonarMerito() {
     const ctx = radio.ctx && radio.ctx.state === "running" ? radio.ctx : null;
     if (!ctx) return;
     const t0 = ctx.currentTime;
@@ -1055,23 +1074,20 @@
     osc.stop(t0 + 0.5);
   }
 
-  function desbloquearLogro(id) {
-    if (logrosConseguidos.has(id)) return;
-    const L = LOGROS.find((x) => x.id === id);
-    if (!L) return;
-
-    logrosConseguidos.add(id);
-    guardarLogros();
-    pintarLogros();
-    log(`[LOGRO] ${L.nombre} desbloqueado`, "linea-nueva");
+  // Cada acción del usuario otorga un mérito al azar con un soldado aleatorio.
+  function desbloquearLogro(tipo) {
+    const m = proximoMerito();
+    const img = IMG_SOLDADOS[Math.floor(Math.random() * IMG_SOLDADOS.length)];
+    const etiqueta = ETIQUETAS_TRIGGER[tipo] || "MISIVA DE CAMPO";
+    log(`[MÉRITO] ${m.n} (${tipo})`, "linea-nueva");
 
     if (document && document.body) {
       const toast = document.createElement("div");
       toast.className = "mensaje-logro";
-      toast.innerHTML = `<img src="${L.img}" alt="">
-        <div><p class="ml-tit">★ LOGRO DESBLOQUEADO · ${logrosConseguidos.size}/${LOGROS.length}</p>
-        <p class="ml-nombre">${L.nombre}</p>
-        <p class="ml-desc">${L.desc}</p></div>`;
+      toast.innerHTML = `<img src="${img}" alt="">
+        <div><p class="ml-tit">★ MÉRITO CONCEDIDO · ${etiqueta}</p>
+        <p class="ml-nombre">${m.n}</p>
+        <p class="ml-desc">${m.d}</p></div>`;
       document.body.appendChild(toast);
       requestAnimationFrame(() => toast.classList.add("mostrar"));
       setTimeout(() => {
@@ -1079,18 +1095,15 @@
         setTimeout(() => toast.remove(), 500);
       }, 4500);
     }
-    sonarLogro();
-
-    if (id !== "comandante" && LOGROS.slice(0, -1).every((x) => logrosConseguidos.has(x.id))) {
-      desbloquearLogro("comandante");
-    }
+    sonarMerito();
   }
+
+  cargarMeritos();
 
   // ---------------- Arranque ----------------
   window.addEventListener("resize", redimensionar);
   redimensionar();
   pintarObjetos();
-  pintarLogros();
 
   // Activación automática del audio al cargar (sin tocar la pantalla).
   // Chrome suele permitirlo por autoplay si el sitio tiene historial de uso;
