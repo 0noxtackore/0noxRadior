@@ -91,6 +91,11 @@
         </dl>
       </section>
 
+      <section class="mod">
+        <header class="mod-tit"><b>MOD-05</b>REGISTRO DE MÉRITOS<i class="conteo" id="contadorLogros">0/5</i></header>
+        <ul class="lista-logros" id="listaLogros"></ul>
+      </section>
+
     </aside>
 
     <!-- ================= PANTALLA DEL RADAR ================= -->
@@ -142,8 +147,8 @@
 
       <!-- Pestaña: puerto serie -->
       <section id="tabSerial" class="modal-sec">
-        <p class="ayuda">El navegador abre el selector del sistema. En esta PC elige
-          <code>COM6</code> (el extremo opuesto a Termite o a python enviar_radar.py).</p>
+        <p class="ayuda">Conecta tu Arduino por USB y elige su puerto aquí.
+          (Web Serial funciona en Chrome/Edge con página segura o localhost.)</p>
 
         <div class="alta-objeto">
           <input type="text" id="inpPuertoElegido" readonly placeholder="NINGÚN PUERTO ELEGIDO" spellcheck="false">

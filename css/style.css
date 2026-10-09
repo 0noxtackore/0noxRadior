@@ -564,6 +564,68 @@ input.invalido { border-color: var(--rojo) !important; box-shadow: 0 0 10px rgba
 .modal #listaPuertos li { cursor: pointer; }
 .modal #listaPuertos li.pick { border-left-color: var(--verde); box-shadow: 0 0 8px rgba(61, 255, 132, .25); }
 
+/* ---------------- Registro de méritos (gamificación) ---------------- */
+.lista-logros { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+
+.logro {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--linea);
+  background: linear-gradient(90deg, rgba(18, 32, 27, .65), transparent);
+}
+
+.logro img {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border: 1px solid var(--linea-fuerte);
+  background: var(--panel-osc);
+}
+
+.logro .logro-nombre { font-size: .68rem; letter-spacing: 1.5px; color: var(--verde); }
+.logro .logro-desc  { font-size: .6rem;  color: var(--texto-apag); line-height: 1.4; margin-top: 2px; }
+.logro .conteo      { margin-left: auto; font-size: .6rem; color: var(--texto-apag); letter-spacing: 1px; }
+
+.logro.bloqueado { opacity: .38; filter: grayscale(1); }
+.logro.conseguido { border-left: 3px solid var(--verde2); box-shadow: 0 0 10px rgba(61, 255, 132, .12); }
+.logro.conseguido .conteo { color: var(--verde2); }
+
+/* Aviso flotante de logro desbloqueado */
+.mensaje-logro {
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  z-index: 130;
+  width: min(380px, 92vw);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  background: linear-gradient(160deg, var(--panel-claro), var(--panel-osc));
+  border: 1px solid var(--verde2);
+  box-shadow: 0 0 26px rgba(61, 255, 132, .35), inset 0 0 14px rgba(0, 0, 0, .5);
+  clip-path: var(--recorte);
+  transform: translate(-50%, 160%);
+  transition: transform .4s cubic-bezier(.2, 1.4, .4, 1);
+}
+
+.mensaje-logro.mostrar { transform: translate(-50%, 0); }
+
+.mensaje-logro img {
+  width: 54px;
+  height: 54px;
+  object-fit: cover;
+  border: 2px solid var(--verde2);
+  box-shadow: 0 0 12px rgba(61, 255, 132, .5);
+}
+
+.mensaje-logro .ml-tit    { font-size: .6rem; letter-spacing: 3px; color: var(--ambar); }
+.mensaje-logro .ml-nombre { font-size: .95rem; letter-spacing: 2px; color: var(--verde);
+  text-shadow: 0 0 10px rgba(61, 255, 132, .6); margin: 3px 0; }
+.mensaje-logro .ml-desc   { font-size: .62rem; color: var(--texto-apag); line-height: 1.45; }
+
 /* ---------------- Pie ---------------- */
 .pie {
   display: flex;
