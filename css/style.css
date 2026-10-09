@@ -70,10 +70,11 @@ body {
 .marca { display: flex; align-items: center; gap: 12px; }
 
 .marca-sig {
-  color: var(--verde2);
-  font-size: 1.5rem;
-  text-shadow: 0 0 14px var(--verde2);
-  animation: girar 8s linear infinite;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  filter: drop-shadow(0 0 6px var(--verde2));
+  animation: girar 10s linear infinite;
 }
 
 @keyframes girar { to { transform: rotate(360deg); } }
