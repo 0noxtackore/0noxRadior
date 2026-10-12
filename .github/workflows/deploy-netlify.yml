@@ -1,0 +1,27 @@
+name: Deploy to Netlify
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to Netlify (production)
+        uses: nwtgck/actions-netlify@v3.0
+        with:
+          # The whole repo root is the publish dir (landing at /, app at /radar.html)
+          publish-dir: .
+          production-branch: main
+          deploy-message: "Deploy ${{ github.sha }}"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          enable-commit-comment: true
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
