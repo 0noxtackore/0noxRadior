@@ -183,35 +183,6 @@ pre {
 pre code { color: inherit; }
 .nota { margin-top: 12px; font-size: 11px; color: var(--ambar); letter-spacing: 1px; }
 
-/* ---- cinta de vigilancia (marquee infinito) ---- */
-.filmstrip {
-  position: relative; overflow: hidden; margin-bottom: 18px;
-  border: 1px solid var(--linea); background: #020604;
-}
-.filmstrip::before, .filmstrip::after {
-  content: ""; position: absolute; top: 0; bottom: 0; width: 90px; z-index: 5; pointer-events: none;
-}
-.filmstrip::before { left: 0; background: linear-gradient(90deg, #040a08, transparent); }
-.filmstrip::after  { right: 0; background: linear-gradient(-90deg, #040a08, transparent); }
-.filmstrip-pista { display: flex; width: max-content; animation: desfile-reel 42s linear infinite; }
-.filmstrip:hover .filmstrip-pista, .filmstrip:focus-within .filmstrip-pista { animation-play-state: paused; }
-.filmstrip figure { position: relative; margin: 0; }
-.filmstrip img { width: 230px; height: 150px; object-fit: cover; display: block; transition: filter .4s; }
-.filmstrip figure.cam img  { filter: grayscale(.8) sepia(.15) contrast(1.12) brightness(.82); }
-.filmstrip figure.nv img   { filter: grayscale(1) sepia(1) saturate(4.5) hue-rotate(55deg) brightness(1.02) contrast(1.18); }
-.filmstrip figure.term img { filter: grayscale(.5) sepia(1) saturate(6) hue-rotate(-22deg) brightness(.86) contrast(1.6); }
-.filmstrip figure:hover img { filter: grayscale(.05) contrast(1.06) brightness(1); }
-.filmstrip figcaption {
-  position: absolute; left: 0; bottom: 0; z-index: 2; padding: 14px 6px 3px 8px;
-  font-size: 9px; letter-spacing: 2px; color: var(--verde);
-  background: linear-gradient(transparent, rgba(2,6,4,.9)); text-shadow: 0 0 6px rgba(0,0,0,.9);
-}
-@keyframes desfile-reel { to { transform: translateX(-50%); } }
-@media (prefers-reduced-motion: reduce) {
-  .filmstrip-pista { animation: none; overflow-x: auto; width: auto; }
-  .ticker span { animation: none; padding-left: 0; }
-}
-
 /* ---- galería de archivo ---- */
 .galeria { columns: 4 250px; column-gap: 14px; }
 .galeria figure {
