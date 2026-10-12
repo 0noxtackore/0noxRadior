@@ -184,22 +184,57 @@ pre code { color: inherit; }
 .nota { margin-top: 12px; font-size: 11px; color: var(--ambar); letter-spacing: 1px; }
 
 /* ---- galería de archivo ---- */
-.galeria { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.galeria { columns: 4 250px; column-gap: 14px; }
 .galeria figure {
-  border: 1px solid var(--linea); background: var(--caja); overflow: hidden; position: relative;
+  break-inside: avoid; margin-bottom: 14px; position: relative; overflow: hidden;
+  border: 1px solid var(--linea); background: var(--caja);
   clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
-  transition: all .2s;
+  transition: border-color .25s, box-shadow .25s, transform .25s;
 }
-.galeria figure:hover { border-color: var(--verde); box-shadow: 0 0 16px rgba(61,255,132,.22); transform: translateY(-2px); }
+.galeria figure:hover { border-color: var(--verde); box-shadow: 0 0 18px rgba(61,255,132,.25); transform: translateY(-3px); }
 .galeria a { display: block; }
-.galeria img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; filter: saturate(.7) contrast(1.05); transition: filter .2s; }
-.galeria figure:hover img { filter: saturate(1) contrast(1.1); }
+.galeria img {
+  width: 100%; display: block; transition: transform .5s ease, filter .5s ease;
+}
+.galeria figure:nth-child(3n+1) img { aspect-ratio: 4/5; }
+.galeria figure:nth-child(3n+2) img { aspect-ratio: 1/1; }
+.galeria figure:nth-child(3n)   img { aspect-ratio: 16/10; }
+
+/* ---- filtros por tipo de sensor ---- */
+.galeria figure.cam img { filter: grayscale(.8) sepia(.15) contrast(1.12) brightness(.82); }
+.galeria figure.nv  img { filter: grayscale(1) sepia(1) saturate(4.5) hue-rotate(55deg) brightness(1.02) contrast(1.18); }
+.galeria figure.term img { filter: grayscale(.5) sepia(1) saturate(6) hue-rotate(-22deg) brightness(.86) contrast(1.6); }
+
+/* al pasar el cursor se revela el color original */
+.galeria figure:hover img { filter: grayscale(.05) contrast(1.06) brightness(1); transform: scale(1.07); }
+
+/* ---- overlays (scanlines + marcos) ---- */
+.galeria figure::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 2;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,.22) 0 1px, transparent 1px 3px);
+  mix-blend-mode: multiply;
+}
+.galeria figure::before {
+  content: ""; position: absolute; top: 9px; left: 9px; width: 18px; height: 18px; z-index: 3;
+  border-top: 2px solid var(--verde); border-left: 2px solid var(--verde);
+  opacity: .85; pointer-events: none;
+}
+.galeria figure.term::before { border-color: var(--ambar); }
+
+.cam-hud {
+  position: absolute; top: 10px; left: 32px; z-index: 4; pointer-events: none;
+  font-size: 10px; letter-spacing: 2px; color: var(--verde);
+  text-shadow: 0 0 6px rgba(0,0,0,.95), 0 0 12px rgba(0,0,0,.7);
+}
+.cam-hud::before { content: "● "; color: var(--rojo); animation: latido 1.3s infinite; }
+.galeria figure.term .cam-hud { color: var(--ambar); }
+
 .galeria figcaption {
-  position: absolute; left: 0; right: 0; bottom: 0; padding: 22px 8px 6px 10px;
-  background: linear-gradient(transparent, rgba(2,6,4,.94));
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 24px 8px 7px 10px; z-index: 3;
+  background: linear-gradient(transparent, rgba(2,6,4,.95));
   display: flex; justify-content: space-between; align-items: baseline; gap: 6px;
 }
-.galeria b { font-size: 11px; letter-spacing: 2px; color: var(--verde); }
+.galeria b { font-size: 11px; letter-spacing: 2px; color: var(--verde); text-shadow: 0 0 6px rgba(0,0,0,.9); }
 .galeria span { font-size: 9px; letter-spacing: 1.5px; color: #6e9486; }
 
 /* ================= PIE ================= */
@@ -217,7 +252,7 @@ pre code { color: inherit; }
   .hero-img { order: -1; }
   .grid { grid-template-columns: repeat(2, 1fr); }
   .plantilla { grid-template-columns: repeat(3, 1fr); }
-  .galeria { grid-template-columns: repeat(3, 1fr); }
+  .galeria { columns: 3 200px; }
 }
 
 @media (max-width: 640px) {
@@ -225,7 +260,7 @@ pre code { color: inherit; }
   .nav { order: 3; width: 100%; margin: 0; overflow-x: auto; gap: 14px; }
   .hero, .seccion { padding-left: 18px; padding-right: 18px; }
   .grid, .tec-grid, .plantilla { grid-template-columns: 1fr; }
-  .galeria { grid-template-columns: 1fr; }
+  .galeria { columns: 1; }
   .stats { grid-template-columns: repeat(2, 1fr); }
   .pie { padding: 18px; flex-direction: column; align-items: flex-start; }
 }
