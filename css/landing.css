@@ -83,6 +83,13 @@ a { color: inherit; text-decoration: none; }
 @keyframes latido { 50% { opacity: .65; } }
 
 /* ================= HERO ================= */
+.hero { position: relative; isolation: isolate; }
+.hero-fondo {
+  position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    linear-gradient(rgba(4,10,8,.9), rgba(4,10,8,.55) 60%, var(--fondo)),
+    url("../img/landing-page/m1.jpg") center/cover no-repeat;
+}
 .hero {
   display: grid; grid-template-columns: 1.15fr .85fr; gap: 30px;
   align-items: center; padding: 72px 42px 54px; max-width: 1280px; margin: 0 auto;
@@ -176,6 +183,25 @@ pre {
 pre code { color: inherit; }
 .nota { margin-top: 12px; font-size: 11px; color: var(--ambar); letter-spacing: 1px; }
 
+/* ---- galería de archivo ---- */
+.galeria { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.galeria figure {
+  border: 1px solid var(--linea); background: var(--caja); overflow: hidden; position: relative;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+  transition: all .2s;
+}
+.galeria figure:hover { border-color: var(--verde); box-shadow: 0 0 16px rgba(61,255,132,.22); transform: translateY(-2px); }
+.galeria a { display: block; }
+.galeria img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; filter: saturate(.7) contrast(1.05); transition: filter .2s; }
+.galeria figure:hover img { filter: saturate(1) contrast(1.1); }
+.galeria figcaption {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 22px 8px 6px 10px;
+  background: linear-gradient(transparent, rgba(2,6,4,.94));
+  display: flex; justify-content: space-between; align-items: baseline; gap: 6px;
+}
+.galeria b { font-size: 11px; letter-spacing: 2px; color: var(--verde); }
+.galeria span { font-size: 9px; letter-spacing: 1.5px; color: #6e9486; }
+
 /* ================= PIE ================= */
 .pie {
   display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
@@ -191,6 +217,7 @@ pre code { color: inherit; }
   .hero-img { order: -1; }
   .grid { grid-template-columns: repeat(2, 1fr); }
   .plantilla { grid-template-columns: repeat(3, 1fr); }
+  .galeria { grid-template-columns: repeat(3, 1fr); }
 }
 
 @media (max-width: 640px) {
@@ -198,6 +225,7 @@ pre code { color: inherit; }
   .nav { order: 3; width: 100%; margin: 0; overflow-x: auto; gap: 14px; }
   .hero, .seccion { padding-left: 18px; padding-right: 18px; }
   .grid, .tec-grid, .plantilla { grid-template-columns: 1fr; }
+  .galeria { grid-template-columns: 1fr; }
   .stats { grid-template-columns: repeat(2, 1fr); }
   .pie { padding: 18px; flex-direction: column; align-items: flex-start; }
 }
