@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#06130d"/>
+      <stop offset=".6" stop-color="#020805"/>
+      <stop offset="1" stop-color="#000000"/>
+    </linearGradient>
+    <radialGradient id="halo" cx=".78" cy=".5" r=".55">
+      <stop offset="0" stop-color="#3dff84" stop-opacity=".16"/>
+      <stop offset="1" stop-color="#3dff84" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="360" fill="url(#bg)"/>
+  <rect width="1200" height="360" fill="url(#halo)"/>
+
+  <!-- cuadrícula -->
+  <g stroke="#1d3a2e" stroke-opacity=".55">
+    <path d="M0 90 H1200 M0 180 H1200 M0 270 H1200 M0 45 H1200 M0 135 H1200 M0 225 H1200 M0 315 H1200"/>
+    <path d="M900 0 V360 M990 0 V360 M1080 0 V360 M1170 0 V360"/>
+  </g>
+
+  <!-- radar -->
+  <g transform="translate(960 180)">
+    <circle r="150" fill="none" stroke="#3dff84" stroke-opacity=".55"/>
+    <circle r="100" fill="none" stroke="#3dff84" stroke-opacity=".4"/>
+    <circle r="50" fill="none" stroke="#3dff84" stroke-opacity=".3"/>
+    <path d="M0 0 L150 0" stroke="#3dff84" stroke-width="4"/>
+    <path d="M0 0 L-40 -120" stroke="#3dff84" stroke-opacity=".6" stroke-width="2"/>
+    <path d="M0 0 L30 -120" stroke="#3dff84" stroke-opacity=".4" stroke-width="1.5"/>
+    <path d="M0 0 L80 -80" stroke="#3dff84" stroke-opacity=".3" stroke-width="1"/>
+    <circle cx="110" cy="66" r="7" fill="#3dff84"/>
+    <circle cx="-95" cy="75" r="5" fill="#ff3d4f"/>
+    <path d="M0 -150 V150 M-150 0 H150" stroke="#3dff84" stroke-opacity=".25" stroke-width="1"/>
+  </g>
+
+  <!-- texto -->
+  <text x="70" y="150" fill="#3dff84" font-family="Consolas, monospace" font-size="64" font-weight="700" letter-spacing="8">0NOXRADIOR</text>
+  <text x="74" y="200" fill="#9db8ab" font-family="Consolas, monospace" font-size="20" letter-spacing="4">ULTRASONIC BARRAGE SYSTEM · MODULE ELT-622</text>
+  <g transform="translate(70 226)">
+    <rect width="18" height="18" fill="none" stroke="#3dff84"/>
+    <rect x="24" width="18" height="18" fill="none" stroke="#3dff84"/>
+    <rect x="48" width="18" height="18" fill="none" stroke="#3dff84"/>
+    <rect x="72" width="18" height="18" fill="none" stroke="#3dff84"/>
+  </g>
+  <text x="70" y="300" fill="#6e9486" font-family="Consolas, monospace" font-size="14" letter-spacing="3">STATUS: SWEEP 0-180 PASSIVE LISTENING · TELEMETRY 9600 BAUD</text>
+  <circle cx="1120" cy="34" r="5" fill="#3dff84"/>
+  <text x="1100" y="40" fill="#6e9486" font-family="Consolas, monospace" font-size="12" text-anchor="end">SONAR ACTIVE</text>
+</svg>
