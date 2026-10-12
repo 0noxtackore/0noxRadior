@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 420">
+  <defs>
+    <linearGradient id="abismo" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#06130d"/>
+      <stop offset=".55" stop-color="#020805"/>
+      <stop offset="1" stop-color="#000000"/>
+    </linearGradient>
+    <linearGradient id="casco" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a3b33"/>
+      <stop offset=".4" stop-color="#111b17"/>
+      <stop offset="1" stop-color="#060b09"/>
+    </linearGradient>
+    <radialGradient id="sonarGlow" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#3dff84" stop-opacity=".28"/>
+      <stop offset="1" stop-color="#3dff84" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="720" height="420" fill="url(#abismo)"/>
+
+  <!-- halo del sonar -->
+  <circle cx="168" cy="206" r="170" fill="url(#sonarGlow)"/>
+
+  <!-- anillos de sonar del proa -->
+  <g fill="none" stroke="#3dff84" stroke-opacity=".5">
+    <circle cx="168" cy="206" r="40" opacity=".9">
+      <animate attributeName="r" values="20;90" dur="3s" repeatCount="indefinite"/>
+      <animate attributeName="stroke-opacity" values=".8;0" dur="3s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="168" cy="206" r="40" opacity=".9">
+      <animate attributeName="r" values="20;90" dur="3s" begin="1.5s" repeatCount="indefinite"/>
+      <animate attributeName="stroke-opacity" values=".8;0" dur="3s" begin="1.5s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- haz de sonar hacia abajo -->
+  <path d="M168 206 L90 400 M168 206 L246 400" stroke="#3dff84" stroke-opacity=".12" stroke-width="40"/>
+
+  <!-- casco -->
+  <path d="M470 300 Q300 268 210 268 L160 268 Q120 268 96 300 Q120 332 160 332 L210 332 Q380 332 470 300 Z"
+        fill="url(#casco)" stroke="#3dff84" stroke-opacity=".55" stroke-width="3"/>
+
+  <!-- vela (torreta) -->
+  <path d="M272 268 L272 206 Q272 196 284 196 L306 196 Q318 196 318 206 L318 268 Z"
+        fill="url(#casco)" stroke="#3dff84" stroke-opacity=".5" stroke-width="2.5"/>
+  <path d="M286 196 L286 172 Q288 166 294 166 L298 166 L300 196 Z" fill="#0d1613" stroke="#3dff84" stroke-opacity=".5" stroke-width="2"/>
+
+  <!-- timón de popa -->
+  <path d="M470 300 L540 282 L540 318 Z M470 300 L560 300 L540 286 L540 314 Z"
+        fill="url(#casco)" stroke="#3dff84" stroke-opacity=".5" stroke-width="2.5"/>
+  <ellipse cx="552" cy="300" rx="10" ry="30" fill="#020805" stroke="#3dff84" stroke-opacity=".35" stroke-width="2"/>
+
+  <!-- hélice -->
+  <g fill="#0d1613" stroke="#3dff84" stroke-opacity=".4" stroke-width="2">
+    <path d="M570 300 L596 288 L590 300 L596 312 Z"/>
+    <path d="M570 300 L588 276 L596 286 L610 292 Z"/>
+    <path d="M570 300 L586 326 L594 316 L610 310 Z"/>
+  </g>
+
+  <!-- ojo de buey -->
+  <g fill="#04130c" stroke="#3dff84" stroke-opacity=".6" stroke-width="2">
+    <circle r="7" cx="222" cy="300"/>
+    <circle r="7" cx="250" cy="302"/>
+    <circle r="7" cx="296" cy="303"/>
+    <circle r="7" cx="344" cy="302"/>
+    <circle r="7" cx="392" cy="300"/>
+  </g>
+
+  <!-- número táctico -->
+  <text x="318" y="312" fill="#3dff84" font-family="Consolas,monospace" font-size="16" letter-spacing="4" text-anchor="middle" opacity=".85">OX-7</text>
+
+  <!-- burbujas -->
+  <g fill="none" stroke="#3dff84" stroke-opacity=".5" stroke-width="1.5">
+    <circle cx="588" cy="280" r="3"><animate attributeName="cy" values="284;250" dur="1.6s" repeatCount="indefinite"/></circle>
+    <circle cx="606" cy="292" r="2"><animate attributeName="cy" values="292;244" dur="1.9s" repeatCount="indefinite"/></circle>
+    <circle cx="594" cy="272" r="2.5"><animate attributeName="cy" values="272;240" dur="1.4s" repeatCount="indefinite"/></circle>
+  </g>
+
+  <!-- profundidad -->
+  <text x="660" y="30" fill="#6e9486" font-family="Consolas,monospace" font-size="13" letter-spacing="3" text-anchor="end">PROF: 240 M</text>
+  <text x="660" y="50" fill="#3dff84" font-family="Consolas,monospace" font-size="13" letter-spacing="3" text-anchor="end">SONAR: ACTIVO</text>
+  <circle cx="594" cy="44" r="3.5" fill="#3dff84">
+    <animate attributeName="opacity" values="1;0.2;1" dur="1.2s" repeatCount="indefinite"/>
+  </circle>
+</svg>
